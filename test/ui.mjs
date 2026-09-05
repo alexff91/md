@@ -162,7 +162,10 @@ const clip = await page.evaluate(async () => {
   return out;
 });
 check('в буфере и HTML, и исходный текст', /<h1[^>]*>Report<\/h1>/.test(clip['text/html'] || '') && (clip['text/plain'] || '').startsWith('# Report'), Object.keys(clip).join(','));
-check('статус подтверждает копирование', (await page.textContent('#status')) === 'HTML copied');
+// Запись в буфер асинхронная: статус появляется чуть позже, чем буфер уже
+// читается. Ждём его, а не проверяем мгновенно — иначе проверка мигает.
+const confirmed = await page.waitForFunction(() => document.getElementById('status').textContent === 'HTML copied', null, { timeout: 3000 }).then(() => true).catch(() => false);
+check('статус подтверждает копирование', confirmed, await page.textContent('#status'));
 
 /* ---------------------------------------------------- хранение */
 await type('# Kept\n\nstill here');
