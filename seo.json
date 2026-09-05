@@ -1,0 +1,25 @@
+{
+  "host": "md.alftech.space",
+  "category": "UtilitiesApplication",
+  "color": "#3730a3",
+  "glyph": "M",
+  "features": {
+    "en": [
+      "Live preview as you type",
+      "Tables, task lists, code blocks, quotes",
+      "Toolbar and keyboard shortcuts",
+      "Tidy tables: pipes lined up in one click",
+      "Save .md, standalone .html, copy HTML, print to PDF",
+      "Text stays in the browser, works offline"
+    ],
+    "ru": [
+      "Превью обновляется по мере набора",
+      "Таблицы, чек-листы, код, цитаты",
+      "Панель кнопок и горячие клавиши",
+      "Выровнять таблицы одной кнопкой",
+      "Сохранить .md, отдельный .html, скопировать HTML, печать в PDF",
+      "Текст остаётся в браузере, работает офлайн"
+    ]
+  },
+  "updated": "2026-09-05"
+}
