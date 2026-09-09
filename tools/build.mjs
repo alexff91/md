@@ -61,6 +61,12 @@ function family(lang) {
   const tail = lang === 'ru'
     ? 'Всё считает браузер, ни один файл не уходит на сервер.'
     : 'All of it runs in the browser; no file is uploaded.';
+  // Ссылка на витрину. Семь инструментов ссылались друг на друга и больше
+  // никуда: для поисковика это остров, на который нет ни одной дороги
+  // снаружи. Google за двое суток не зашёл ни на один из них ни разу.
+  const all = lang === 'ru'
+    ? '<a href="https://alftech.space/">Все проекты — alftech.space</a>'
+    : '<a href="https://alftech.space/">Everything else — alftech.space</a>';
   return `<nav class="family" aria-label="${title}">
   <h2>${title}</h2>
   <ul>` + others.map(tool => `
@@ -69,7 +75,7 @@ function family(lang) {
       <span>${lang === 'ru' ? tool.hintRu : tool.hintEn}</span>
     </a></li>`).join('') + `
   </ul>
-  <p>${tail}</p>
+  <p>${tail} ${all}</p>
 </nav>`;
 }
 
