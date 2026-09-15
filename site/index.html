@@ -169,6 +169,14 @@
   }
   @media (max-width: 860px) {
     .wrap { padding: 18px 13px 50px; }
+    /* Переключатель языка — в одну строку с надзаголовком: отдельной строкой
+       посреди экрана он съедал треть первого экрана на телефоне. */
+    .head { position: relative; }
+    .langs { position: absolute; top: -2px; right: 0; padding: 2px; }
+    .langs button { min-height: 32px; padding: 6px 11px; font-size: 11px; }
+    .eyebrow { padding-right: 96px; }
+    h1 { font-size: clamp(34px, 11vw, 46px); }
+    .lede { font-size: 14px; }
     .work { padding: 9px; }
     .panes, .panes[data-view="preview"] { grid-template-columns: 1fr !important; height: auto; min-height: 0; }
     .panes .outline { display: none; }
