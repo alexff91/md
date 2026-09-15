@@ -4,148 +4,237 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Markdown — online editor with live preview, tables and export</title>
-<meta name="description" content="Write Markdown and see the result as you type: tables, task lists, code, quotes. Save as .md or .html, copy HTML, print to PDF. Nothing is uploaded.">
+<meta name="description" content="Write Markdown and see the result as you type: tables, task lists, code. Save .md or .html, copy HTML, print to PDF. Nothing is uploaded, works offline.">
 <meta name="robots" content="index, follow">
+
+<!-- Шрифты лежат рядом, а не на чужом сервере: страница обещает работать без
+     сети и ничего никуда не отправлять, и подключение к шрифтовому хостингу
+     нарушило бы оба обещания разом. Onest знает кириллицу — у страницы две
+     языковые версии, и обе должны выглядеть одинаково. -->
 <style>
+  @font-face { font-family: Onest; src: url(/fonts/Onest-latin-400.woff2) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2212, U+2215; }
+  @font-face { font-family: Onest; src: url(/fonts/Onest-latin-600.woff2) format('woff2'); font-weight: 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2212, U+2215; }
+  @font-face { font-family: Onest; src: url(/fonts/Onest-latin-700.woff2) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2212, U+2215; }
+  @font-face { font-family: Onest; src: url(/fonts/Onest-cyrillic-400.woff2) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: Onest; src: url(/fonts/Onest-cyrillic-600.woff2) format('woff2'); font-weight: 600; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: Onest; src: url(/fonts/Onest-cyrillic-700.woff2) format('woff2'); font-weight: 700; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: 'JetBrains Mono'; src: url(/fonts/JetBrains-Mono-latin-400.woff2) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2212, U+2215; }
+  @font-face { font-family: 'JetBrains Mono'; src: url(/fonts/JetBrains-Mono-latin-500.woff2) format('woff2'); font-weight: 500; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2212, U+2215; }
+  @font-face { font-family: 'JetBrains Mono'; src: url(/fonts/JetBrains-Mono-cyrillic-400.woff2) format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: 'JetBrains Mono'; src: url(/fonts/JetBrains-Mono-cyrillic-500.woff2) format('woff2'); font-weight: 500; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+</style>
+
+<style>
+  /* Замысел: слева машинопись, справа готовая страница. Редактор тёмный, как
+     терминал; превью — белый лист с тенью, лежащий на этом тёмном. Это не
+     украшение: человек видит ровно то, что получит, и видит, что это две
+     разные вещи, а не два окна одного цвета. */
   :root {
-    --bg:#f6f7f9; --card:#fff; --ink:#15181d; --soft:#646c7a; --line:#e3e6ec;
-    --accent:#3730a3; --accent-soft:#eceafb; --r:12px;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
-  }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; }
-  .wrap { max-width:1180px; margin:0 auto; padding:28px 18px 80px; }
-  h1 { font-size:clamp(23px,4.5vw,30px); letter-spacing:-.5px; margin:0; }
-  .lede { color:var(--soft); margin:8px 0 22px; max-width:62ch; }
-  .head { display:flex; justify-content:space-between; align-items:center; gap:16px; }
-  .langs { display:flex; gap:4px; padding:3px; background:#fff; border:1px solid var(--line);
-    border-radius:999px; flex:none; }
-  .langs button { font:inherit; font-size:13px; font-weight:700; letter-spacing:.03em;
-    padding:5px 12px; border-radius:999px; background:transparent; color:var(--soft);
-    border:0; cursor:pointer; }
-  .langs button[aria-pressed="true"] { background:var(--accent); color:#fff; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--r);
-    padding:14px; margin-bottom:16px; }
-  button { font:inherit; font-weight:600; border:0; border-radius:9px; padding:9px 14px;
-    background:var(--accent); color:#fff; cursor:pointer; }
-  button:hover:not(:disabled) { background:#2c2685; }
-  button:disabled { opacity:.45; cursor:default; }
-  button.ghost { background:#fff; color:var(--ink); border:1.5px solid var(--line); }
-  button.ghost:hover:not(:disabled) { border-color:var(--accent); background:#fff; }
-
-  /* Верхняя полоса: переключатель вида и файловые кнопки. На телефоне
-     обе группы прокручиваются по горизонтали, а не ломают строку. */
-  .top { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; }
-  .views { display:flex; gap:2px; padding:3px; background:var(--bg); border-radius:10px; flex:none; }
-  .views button { background:transparent; color:var(--soft); padding:7px 12px; font-size:14px; }
-  .views button:hover:not(:disabled) { background:transparent; color:var(--ink); }
-  .views button[aria-pressed="true"] { background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
-  .files { display:flex; gap:6px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-  .files::-webkit-scrollbar { display:none; }
-  .files button { flex:none; font-size:14px; padding:8px 12px; }
-
-  .toolbar { display:flex; gap:6px; overflow-x:auto; padding:10px 0 2px; scrollbar-width:none; }
-  .toolbar::-webkit-scrollbar { display:none; }
-  .toolbar button { flex:none; background:#fff; color:var(--ink); border:1px solid var(--line);
-    font-size:13.5px; padding:7px 11px; border-radius:8px; font-weight:600; }
-  .toolbar button:hover:not(:disabled) { background:var(--accent-soft); border-color:var(--accent); }
-  .toolbar .sep { width:1px; background:var(--line); margin:4px 4px; flex:none; }
-
-  /* Две колонки. Высота от окна, чтобы редактор и превью прокручивались
-     каждый сам по себе, а не страница целиком. */
-  .panes { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;
-    height:calc(100vh - 300px); min-height:420px; }
-  .panes[data-view="write"] { grid-template-columns:1fr; }
-  .panes[data-view="write"] .preview { display:none; }
-  .panes[data-view="preview"] { grid-template-columns:1fr; }
-  .panes[data-view="preview"] .editor { display:none; }
-  .editor { width:100%; height:100%; resize:none; border:1px solid var(--line); border-radius:10px;
-    padding:14px 16px; font:15px/1.6 var(--mono); color:var(--ink); background:#fff;
-    tab-size:2; -moz-tab-size:2; }
-  .editor:focus { outline:2px solid var(--accent-soft); border-color:var(--accent); }
-  /* .md центрирует статью через margin:auto — в гриде это выключает
-     растяжение, и превью вылезало бы за свою колонку. Тут ширина от колонки. */
-  .preview.md { height:100%; overflow:auto; border:1px solid var(--line); border-radius:10px;
-    padding:18px 22px; background:#fff; max-width:none; margin:0; width:100%; min-width:0; }
-  .drag .editor { border-color:var(--accent); background:var(--accent-soft); }
-
-  .bottom { display:flex; justify-content:space-between; gap:10px; margin-top:10px;
-    font-size:13px; color:var(--soft); flex-wrap:wrap; }
-  .status { min-height:20px; }
-  .status.ok { color:#1a7f37; }
-  .status.bad { color:#b3261e; }
-
-  .note { background:var(--accent-soft); border-radius:10px; padding:13px 15px;
-    font-size:14.5px; line-height:1.55; margin-top:12px; }
-  footer { color:var(--soft); font-size:14px; border-top:1px solid var(--line);
-    margin-top:30px; padding-top:18px; max-width:70ch; }
-  footer .lic { font-size:12.5px; margin-top:8px; }
-  .hidden { display:none !important; }
-
-  @media (max-width:899px) {
-    .wrap { padding:18px 12px 60px; }
-    .card { padding:10px; }
-    .panes { grid-template-columns:1fr !important; height:auto; min-height:0; }
-    .editor, .preview { height:62vh; min-height:340px; }
-    .views .split { display:none; }
-    .langs button, .files button, .views button, .toolbar button { min-height:44px; }
-    .editor { font-size:16px; }
+    --ink: #0f1115;          /* чернила: фон интерфейса */
+    --ink-2: #161a21;        /* панели */
+    --ink-3: #1d232c;        /* приподнятое */
+    --line: #262e3a;
+    --text: #e8ecf2;
+    --dim: #93a0b0;
+    --paper: #ffffff;
+    --paper-text: #14181d;
+    --accent: #7ad3a8;       /* мятный: подсветка синтаксиса и действий */
+    --accent-deep: #1f7d57;
+    --accent-soft: #12241c;
+    --warn: #e8a13c;
+    --danger: #e2685c;
+    --ui: Onest, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --r: 12px;
+    --shadow: 0 18px 50px rgba(0, 0, 0, .40), 0 2px 6px rgba(0, 0, 0, .30);
   }
 
-  /* Печать: только сама страница, без редактора и кнопок. Так «печать в
-     PDF» становится экспортом, для которого не нужна ни одна библиотека. */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--ink); color: var(--text);
+    font: 400 15px/1.55 var(--ui); -webkit-font-smoothing: antialiased;
+    /* Едва заметная сетка: поверхность перестаёт быть плоской заливкой. */
+    background-image:
+      radial-gradient(circle at 18% -10%, rgba(122, 211, 168, .07), transparent 55%),
+      linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size: auto, 44px 44px, 44px 44px;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 26px 22px 40px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* Шапка: крупный набор, как у обложки, и ни одного лишнего слова. */
+  .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; flex-wrap: wrap; }
+  .brand { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .eyebrow { font: 500 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  h1 {
+    margin: 0; font-weight: 700; letter-spacing: -.035em; line-height: .92;
+    font-size: clamp(38px, 7.2vw, 76px); text-wrap: balance;
+  }
+  h1 .mark { color: var(--accent); }
+  .lede { color: var(--dim); margin: 0; max-width: 56ch; font-size: 15px; }
+
+  .langs { display: flex; gap: 2px; padding: 3px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; flex: none; }
+  .langs button { font: 600 12px/1 var(--mono); letter-spacing: .06em; padding: 8px 13px; border-radius: 999px;
+    background: transparent; color: var(--dim); border: 0; cursor: pointer; transition: color .15s, background .15s; }
+  .langs button[aria-pressed="true"] { background: var(--accent); color: #07130e; }
+  .langs button:hover:not([aria-pressed="true"]) { color: var(--text); }
+
+  /* Рабочая область: одна карточка, внутри полосы управления и два поля. */
+  .work { background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; box-shadow: var(--shadow); }
+  .top { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .views { display: flex; gap: 2px; padding: 3px; background: var(--ink); border-radius: 9px; flex: none; border: 1px solid var(--line); }
+  .views button { background: transparent; color: var(--dim); padding: 7px 13px; font: 600 12.5px/1 var(--ui);
+    border: 0; border-radius: 7px; cursor: pointer; transition: color .15s, background .15s; }
+  .views button[aria-pressed="true"] { background: var(--ink-3); color: var(--text); }
+  .views button:hover:not([aria-pressed="true"]) { color: var(--text); }
+
+  .files { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .files::-webkit-scrollbar { display: none; }
+  button { font: 600 12.5px/1 var(--ui); border: 1px solid var(--line); border-radius: 8px; padding: 9px 13px;
+    background: var(--ink); color: var(--text); cursor: pointer; flex: none;
+    transition: border-color .15s, background .15s, color .15s, transform .12s; }
+  button:hover:not(:disabled) { border-color: var(--accent-deep); background: var(--ink-3); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.go { background: var(--accent); border-color: var(--accent); color: #07130e; }
+  button.go:hover:not(:disabled) { filter: brightness(1.07); background: var(--accent); }
+  button:focus-visible, .langs button:focus-visible, .views button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .toolbar { display: flex; gap: 5px; overflow-x: auto; padding: 11px 0 3px; scrollbar-width: none; }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .toolbar button { padding: 7px 11px; font-size: 12px; background: transparent; color: var(--dim); }
+  .toolbar button:hover { color: var(--text); background: var(--ink); }
+  .toolbar .sep { width: 1px; background: var(--line); margin: 5px 5px; flex: none; }
+
+  /* Три колонки: оглавление, машинопись, бумага. Оглавление появляется, когда
+     в тексте есть заголовки — пустой колонки на экране не бывает. */
+  .panes { display: grid; grid-template-columns: 190px 1fr 1fr; gap: 12px; margin-top: 11px;
+    height: clamp(360px, calc(100vh - 420px), 760px); }
+  .panes[data-outline="off"] { grid-template-columns: 1fr 1fr; }
+  .panes[data-outline="off"] .outline { display: none; }
+  .panes[data-view="write"] { grid-template-columns: 1fr; }
+  .panes[data-view="write"] .preview, .panes[data-view="write"] .outline { display: none; }
+  .panes[data-view="preview"] { grid-template-columns: 190px 1fr; }
+  .panes[data-view="preview"][data-outline="off"] { grid-template-columns: 1fr; }
+  .panes[data-view="preview"] .editor { display: none; }
+
+  .outline { overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--ink); padding: 12px 6px 12px 12px; }
+  .outline h2 { font: 500 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; }
+  .outline a { display: block; color: var(--dim); text-decoration: none; font-size: 12.5px; line-height: 1.35;
+    padding: 5px 8px 5px 10px; border-left: 2px solid transparent; border-radius: 0 6px 6px 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .15s, border-color .15s, background .15s; }
+  .outline a:hover { color: var(--text); background: var(--ink-3); }
+  .outline a.here { color: var(--accent); border-left-color: var(--accent); }
+  .outline a.l3 { padding-left: 20px; font-size: 12px; }
+  .outline a.l4 { padding-left: 30px; font-size: 12px; }
+
+  .editor {
+    width: 100%; height: 100%; resize: none; border: 1px solid var(--line); border-radius: 10px;
+    padding: 18px 18px; font: 400 14px/1.7 var(--mono); color: var(--text); background: var(--ink);
+    tab-size: 2; -moz-tab-size: 2; transition: border-color .15s;
+  }
+  .editor::placeholder { color: #5c6878; }
+  .editor:focus { outline: none; border-color: var(--accent-deep); }
+
+  /* Бумага. Белый лист лежит на тёмном столе — это и есть весь замысел. */
+  .preview.md {
+    height: 100%; overflow: auto; border-radius: 10px; padding: 34px 38px;
+    background: var(--paper); color: var(--paper-text); box-shadow: var(--shadow);
+    max-width: none; margin: 0; width: 100%; min-width: 0; border: 0;
+  }
+  .drag .editor { border-color: var(--accent); background: var(--accent-soft); }
+
+  .bottom { display: flex; justify-content: space-between; gap: 12px; margin-top: 11px; flex-wrap: wrap; align-items: center; }
+  /* Счётчики моноширинным с табличными цифрами: при наборе они меняются
+     каждую секунду, и прыгающая ширина цифр раздражает сильнее, чем кажется. */
+  .stats { display: flex; gap: 0; font: 400 11.5px/1 var(--mono); color: var(--dim); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .stats b { color: var(--text); font-weight: 500; }
+  .stats [aria-hidden] { white-space: pre; opacity: .55; }
+  .status { font: 400 11.5px/1 var(--mono); color: var(--dim); min-height: 14px; transition: color .2s; }
+  .status.ok { color: var(--accent); }
+  .status.bad { color: var(--danger); }
+
+  .note { background: var(--ink-2); border: 1px solid var(--line); border-left: 2px solid var(--accent-deep);
+    border-radius: 10px; padding: 14px 16px; font-size: 13.5px; line-height: 1.55; color: var(--dim); }
+  .note b, .note strong { color: var(--text); }
+  footer { color: var(--dim); font-size: 13px; border-top: 1px solid var(--line); margin-top: 12px; padding-top: 16px; max-width: 74ch; }
+  footer a { color: var(--accent); }
+  footer .lic { font-size: 11.5px; margin-top: 8px; opacity: .8; }
+  .hidden { display: none !important; }
+
+  @media (max-width: 1040px) {
+    .panes { grid-template-columns: 1fr 1fr; }
+    .panes .outline { display: none; }
+  }
+  @media (max-width: 860px) {
+    .wrap { padding: 18px 13px 50px; }
+    .work { padding: 9px; }
+    .panes, .panes[data-view="preview"] { grid-template-columns: 1fr !important; height: auto; min-height: 0; }
+    .panes .outline { display: none; }
+    .editor, .preview.md { height: 64vh; min-height: 340px; }
+    .preview.md { padding: 22px 20px; }
+    .views .split { display: none; }
+    .langs button, .files button, .views button, .toolbar button { min-height: 44px; }
+    .editor { font-size: 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
   @media print {
-    body { background:#fff; }
-    .wrap { max-width:none; padding:0; }
-    .head, .lede, .top, .toolbar, .bottom, .note, footer, .family, .editor { display:none !important; }
-    .card { border:0; padding:0; margin:0; }
-    .panes { display:block; height:auto; min-height:0; }
-    .preview { display:block !important; height:auto; overflow:visible; border:0; padding:0; }
+    body { background: #fff; }
+    .wrap { max-width: none; padding: 0; }
+    .head, .lede, .top, .toolbar, .bottom, .note, footer, .family, .editor, .outline { display: none !important; }
+    .work { border: 0; padding: 0; margin: 0; background: none; box-shadow: none; }
+    .panes { display: block; height: auto; min-height: 0; }
+    .preview.md { display: block !important; height: auto; overflow: visible; box-shadow: none; padding: 0; }
   }
 </style>
+
 <!-- Оформление превью. Отдельным тегом, потому что этот же текст уезжает
      внутрь сохранённого .html: у экспорта и у экрана один источник стиля. -->
 <style id="mdStyle">
-  .md { font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; color:#15181d; max-width:76ch; margin:0 auto; word-wrap:break-word; }
-  .md > :first-child { margin-top:0; }
-  .md h1, .md h2, .md h3, .md h4 { line-height:1.25; letter-spacing:-.2px; margin:1.4em 0 .5em; }
-  .md h1 { font-size:1.9em; } .md h2 { font-size:1.45em; border-bottom:1px solid #e3e6ec; padding-bottom:.25em; }
-  .md h3 { font-size:1.2em; } .md h4 { font-size:1.05em; }
-  .md p, .md ul, .md ol, .md blockquote, .md pre, .md table { margin:0 0 1em; }
-  .md a { color:#3730a3; }
-  .md code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em; background:#f1f2f5; padding:.15em .4em; border-radius:5px; }
-  .md pre { background:#f1f2f5; padding:12px 14px; border-radius:8px; overflow-x:auto; line-height:1.5; }
-  .md pre code { background:none; padding:0; font-size:.88em; }
-  .md blockquote { border-left:3px solid #c9cdd6; margin-left:0; padding:.2em 0 .2em 1em; color:#4a525f; }
-  .md ul, .md ol { padding-left:1.6em; }
-  .md li + li { margin-top:.2em; }
-  .md li.task { list-style:none; margin-left:-1.5em; }
-  .md li.task input { margin-right:.5em; vertical-align:-.1em; }
-  .md img { max-width:100%; height:auto; }
-  .md hr { border:0; border-top:1px solid #e3e6ec; margin:1.6em 0; }
-  .md .tablewrap { overflow-x:auto; margin:0 0 1em; }
-  .md table { border-collapse:collapse; width:auto; min-width:50%; font-size:.95em; margin:0; }
-  .md th, .md td { border:1px solid #d9dde5; padding:.45em .8em; vertical-align:top; }
-  .md th { background:#f1f2f5; font-weight:600; text-align:left; }
-  .md tbody tr:nth-child(even) { background:#fafbfc; }
-  .md .empty { color:#8a919e; }
+  .md { font: 400 16px/1.68 Onest, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #14181d; max-width: 72ch; margin: 0 auto; word-wrap: break-word; }
+  .md > :first-child { margin-top: 0; }
+  .md h1, .md h2, .md h3, .md h4 { line-height: 1.2; letter-spacing: -.022em; margin: 1.5em 0 .5em; font-weight: 700; }
+  .md h1 { font-size: 1.95em; letter-spacing: -.03em; }
+  .md h2 { font-size: 1.4em; padding-bottom: .28em; border-bottom: 1px solid #e6e9ee; }
+  .md h3 { font-size: 1.15em; } .md h4 { font-size: 1em; }
+  .md p, .md ul, .md ol, .md blockquote, .md pre, .md table { margin: 0 0 1.05em; }
+  .md a { color: #1f7d57; text-underline-offset: 2px; }
+  .md code { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; background: #f1f3f6; padding: .14em .38em; border-radius: 5px; }
+  .md pre { background: #14181d; color: #e8ecf2; padding: 15px 17px; border-radius: 9px; overflow-x: auto; line-height: 1.55; }
+  .md pre code { background: none; padding: 0; font-size: .86em; color: inherit; }
+  .md blockquote { border-left: 2px solid #7ad3a8; margin-left: 0; padding: .1em 0 .1em 1.05em; color: #48525e; }
+  .md ul, .md ol { padding-left: 1.5em; }
+  .md li + li { margin-top: .22em; }
+  .md li.task { list-style: none; margin-left: -1.4em; }
+  .md li.task input { margin-right: .5em; vertical-align: -.1em; accent-color: #1f7d57; }
+  .md img { max-width: 100%; height: auto; border-radius: 6px; }
+  .md hr { border: 0; border-top: 1px solid #e6e9ee; margin: 1.9em 0; }
+  .md .tablewrap { overflow-x: auto; margin: 0 0 1.05em; }
+  .md table { border-collapse: collapse; width: auto; min-width: 50%; font-size: .93em; margin: 0; font-variant-numeric: tabular-nums; }
+  .md th, .md td { border: 1px solid #e0e4ea; padding: .45em .8em; vertical-align: top; }
+  .md th { background: #f6f8fa; font-weight: 600; text-align: left; }
+  .md tbody tr:nth-child(even) { background: #fafbfc; }
+  .md .empty { color: #9aa4b1; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="head">
-    <h1 data-i18n="h1">Markdown</h1>
+    <div class="brand">
+      <span class="eyebrow" data-i18n="eyebrow"></span>
+      <h1><span data-i18n="h1">Markdown</span><span class="mark">.</span></h1>
+      <p class="lede" data-i18n="lede"></p>
+    </div>
     <div class="langs" role="group" aria-label="Language">
       <button type="button" id="langEn" data-lang="en" aria-pressed="true">EN</button>
       <button type="button" id="langRu" data-lang="ru" aria-pressed="false">RU</button>
     </div>
   </div>
-  <p class="lede" data-i18n="lede"></p>
 
-  <div class="card work">
+  <div class="work">
     <div class="top">
       <div class="views" role="group" id="views">
         <button type="button" data-view="write" data-i18n="viewWrite" aria-pressed="false"></button>
@@ -153,12 +242,12 @@
         <button type="button" class="split" data-view="split" data-i18n="viewSplit" aria-pressed="false"></button>
       </div>
       <div class="files">
-        <button type="button" class="ghost" id="open" data-i18n="open"></button>
-        <button type="button" id="saveMd" data-i18n="saveMd"></button>
-        <button type="button" class="ghost" id="saveHtml" data-i18n="saveHtml"></button>
-        <button type="button" class="ghost" id="copyHtml" data-i18n="copyHtml"></button>
-        <button type="button" class="ghost" id="print" data-i18n="print"></button>
-        <button type="button" class="ghost" id="clear" data-i18n="clear"></button>
+        <button type="button" id="open" data-i18n="open"></button>
+        <button type="button" class="go" id="saveMd" data-i18n="saveMd"></button>
+        <button type="button" id="saveHtml" data-i18n="saveHtml"></button>
+        <button type="button" id="copyHtml" data-i18n="copyHtml"></button>
+        <button type="button" id="print" data-i18n="print"></button>
+        <button type="button" id="clear" data-i18n="clear"></button>
       </div>
       <input type="file" id="file" class="hidden" accept=".md,.markdown,.txt,text/markdown,text/plain">
     </div>
@@ -180,13 +269,14 @@
       <button type="button" data-act="rule" data-i18n="tbRule"></button>
     </div>
 
-    <div class="panes" id="panes" data-view="split">
+    <div class="panes" id="panes" data-view="split" data-outline="off">
+      <nav class="outline" id="outline" aria-label="Outline"><h2 data-i18n="outline"></h2><div id="outlineList"></div></nav>
       <textarea class="editor" id="editor" spellcheck="true" autocapitalize="off" autocomplete="off"></textarea>
       <div class="preview md" id="preview"></div>
     </div>
 
     <div class="bottom">
-      <span id="stats"></span>
+      <div class="stats" id="stats"></div>
       <span class="status" id="status"></span>
     </div>
   </div>
@@ -195,7 +285,7 @@
 
   <footer>
     <p data-i18n="footer"></p>
-    <p class="lic">Parsing: <a href="https://github.com/markedjs/marked" target="_blank" rel="noopener">marked</a> 15.0.12, MIT. Sanitising: <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener">DOMPurify</a> 3.2.6, Apache-2.0 / MPL-2.0. Both used unmodified.</p>
+    <p class="lic">Parsing: <a href="https://github.com/markedjs/marked" target="_blank" rel="noopener">marked</a> 15.0.12, MIT. Sanitising: <a href="https://github.com/cure53/DOMPurify" target="_blank" rel="noopener">DOMPurify</a> 3.2.6, Apache-2.0 / MPL-2.0. Type: <a href="https://github.com/omnibus-type/Onest" target="_blank" rel="noopener">Onest</a> and <a href="https://github.com/JetBrains/JetBrainsMono" target="_blank" rel="noopener">JetBrains Mono</a>, OFL — served from this domain, not from a font CDN.</p>
   </footer>
 
 </div>

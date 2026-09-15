@@ -81,7 +81,7 @@ const typed = await page.evaluate(() => ({
   stats: document.getElementById('stats').textContent
 }));
 check('набранное сразу видно в превью', typed.h1 === 'Hi' && typed.cell === '2', JSON.stringify(typed));
-check('счётчик слов считает', /^\d+ words · \d+ characters/.test(typed.stats), typed.stats);
+check('счётчик слов считает', /^\d+ words · \d+ characters · \d+ min read · \d+ headings$/.test(typed.stats), typed.stats);
 
 /* ---------------------------------------------------- вредная разметка */
 await type('<img src=/icon.svg onerror="alert(1)"><script>alert(2)</script><a href="javascript:alert(3)">x</a>\n\n**ok**');

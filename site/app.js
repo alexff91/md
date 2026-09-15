@@ -51,12 +51,49 @@ function renderHtml(text) {
   return box.innerHTML;
 }
 
+var headings = [];
+
+function buildOutline() {
+  headings = Array.prototype.slice.call(preview.querySelectorAll('h1, h2, h3, h4'));
+  var list = $('outlineList');
+  list.textContent = '';
+  headings.forEach(function (node, i) {
+    if (!node.id) node.id = 'h-' + i;
+    var a = document.createElement('a');
+    a.href = '#' + node.id;
+    a.className = 'l' + node.tagName.charAt(1);
+    a.textContent = node.textContent;
+    a.onclick = function (event) {
+      event.preventDefault();
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    list.appendChild(a);
+  });
+  // Меньше двух заголовков — оглавления нет: список из одной строки занимает
+  // колонку и не помогает.
+  $('panes').dataset.outline = headings.length >= 2 ? 'on' : 'off';
+  markCurrent();
+}
+
+// Подсветка текущего раздела: тот заголовок, что последним ушёл за верх окна.
+function markCurrent() {
+  if (!headings.length) return;
+  var top = preview.getBoundingClientRect().top + 8;
+  var current = 0;
+  for (var i = 0; i < headings.length; i++) {
+    if (headings[i].getBoundingClientRect().top <= top + 40) current = i;
+  }
+  var links = $('outlineList').children;
+  for (var j = 0; j < links.length; j++) links[j].className = links[j].className.replace(' here', '') + (j === current ? ' here' : '');
+}
+
 var renderTimer = null;
 function render() {
   clearTimeout(renderTimer);
   renderTimer = setTimeout(function () {
     var text = editor.value;
     preview.innerHTML = text.trim() ? renderHtml(text) : '<p class="empty">' + escapeHtml(t('placeholder')) + '</p>';
+    buildOutline();
     stats(text);
   }, 90);
 }
@@ -68,9 +105,41 @@ function stats(text) {
   var words = text.trim() ? text.trim().split(/\s+/).length : 0;
   var chars = Array.from(text).length;
   var minutes = words ? Math.max(1, Math.ceil(words / 200)) : 0;
-  $('stats').textContent = t('stats', { w: words, c: chars, m: minutes });
+  var heads = headings.length;
+  var box = $('stats');
+  box.textContent = '';
+  [[words, 'statWords'], [chars, 'statChars'], [minutes, 'statRead'], [heads, 'statHeads']].forEach(function (pair, i) {
+    var span = document.createElement('span');
+    var b = document.createElement('b');
+    b.textContent = String(pair[0]);
+    // Точка-разделитель внутри элемента, а не между: иначе строка читается
+    // слитно — «17 words48 characters» — везде, где берут textContent.
+
+    span.appendChild(b);
+    span.appendChild(document.createTextNode(' ' + t(pair[1])));
+    box.appendChild(span);
+    // Разделитель отдельным элементом: он декоративный, его прячут от
+    // экранного диктора, но в textContent он даёт «17 words · 48 characters».
+    if (i < 3) {
+      var dot = document.createElement('span');
+      dot.textContent = ' \u00b7 ';
+      dot.setAttribute('aria-hidden', 'true');
+      box.appendChild(dot);
+    }
+  });
 }
-function setStatus(text, cls) { var s = $('status'); s.textContent = text || ''; s.className = 'status' + (cls ? ' ' + cls : ''); }
+// Ответ на действие держится три секунды и не затирается фоновым
+// «сохранено»: иначе подтверждение копирования жило 400 мс и человек его
+// не видел — автосохранение срабатывало сразу после.
+var stickyUntil = 0;
+function setStatus(text, cls, sticky) {
+  var now = Date.now();
+  if (!sticky && now < stickyUntil) return;
+  if (sticky) stickyUntil = now + 3000;
+  var s = $('status');
+  s.textContent = text || '';
+  s.className = 'status' + (cls ? ' ' + cls : '');
+}
 
 /* ------------------------------------------------------------- хранение */
 var saveTimer = null;
@@ -268,12 +337,12 @@ function tidyTables(text) {
 }
 function tidy() {
   var result = tidyTables(editor.value);
-  if (!result.count) { setStatus(t('noTables')); return; }
+  if (!result.count) { setStatus(t('noTables'), '', true); return; }
   if (result.text !== editor.value) {
     var at = editor.selectionStart;
     replaceRange(0, editor.value.length, result.text, Math.min(at, result.text.length));
   }
-  setStatus(t('tidied'), 'ok');
+  setStatus(t('tidied'), 'ok', true);
 }
 
 /* ------------------------------------------------------------- клавиши */
@@ -359,9 +428,9 @@ async function copyHtml() {
       await navigator.clipboard.writeText(html);
     }
     mark();
-    setStatus(t('copied'), 'ok');
+    setStatus(t('copied'), 'ok', true);
   } catch (error) {
-    setStatus(t('copyFailed'), 'bad');
+    setStatus(t('copyFailed'), 'bad', true);
   }
 }
 function openFile(file) {
@@ -372,9 +441,9 @@ function openFile(file) {
     store(NAME_KEY, docName);
     editor.value = String(reader.result);
     onInput();
-    setStatus(t('opened', { name: file.name }), 'ok');
+    setStatus(t('opened', { name: file.name }), 'ok', true);
   };
-  reader.onerror = function () { setStatus(t('badFile', { name: file.name }), 'bad'); };
+  reader.onerror = function () { setStatus(t('badFile', { name: file.name }), 'bad', true); };
   reader.readAsText(file);
 }
 function clearDocument() {
@@ -425,7 +494,7 @@ function onInput() { render(); autosave(); }
 editor.addEventListener('input', onInput);
 editor.addEventListener('keydown', onKey);
 editor.addEventListener('scroll', function () { syncScroll(editor, preview); });
-preview.addEventListener('scroll', function () { syncScroll(preview, editor); });
+preview.addEventListener('scroll', function () { syncScroll(preview, editor); markCurrent(); });
 
 $('toolbar').addEventListener('click', function (event) {
   var button = event.target.closest('button[data-act]');

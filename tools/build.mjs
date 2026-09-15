@@ -257,9 +257,13 @@ const template = fs.readFileSync(path.join(SITE, 'index.html'), 'utf8');
 fs.writeFileSync(path.join(DIST, 'index.html'), render(template, 'en'));
 fs.writeFileSync(path.join(DIST, 'ru', 'index.html'), render(template, 'ru'));
 
+// Каталоги копируем целиком: шрифты лежат в site/fonts, а copyFileSync
+// умеет только файлы и на папке падает с ENOTSUP.
 for (const name of fs.readdirSync(SITE)) {
   if (name === 'index.html') continue;
-  fs.copyFileSync(path.join(SITE, name), path.join(DIST, name));
+  const from = path.join(SITE, name), to = path.join(DIST, name);
+  if (fs.statSync(from).isDirectory()) fs.cpSync(from, to, { recursive: true });
+  else fs.copyFileSync(from, to);
 }
 
 // Значок вкладки: одна буква на цветном квадрате. Векторный, потому что в
@@ -309,7 +313,10 @@ const shelf = 'v-' + seo.updated + '-' + STRINGS.en.h1.toLowerCase();
 const shellFiles = ['/', '/ru/'].concat(
   fs.readdirSync(DIST)
     .filter(name => /\.(js|svg|webmanifest)$/.test(name) && name !== 'sw.js')
-    .map(name => '/' + name));
+    .map(name => '/' + name),
+  fs.existsSync(path.join(DIST, 'fonts'))
+    ? fs.readdirSync(path.join(DIST, 'fonts')).map(name => '/fonts/' + name)
+    : []);
 fs.writeFileSync(path.join(DIST, 'sw.js'), `'use strict';
 var SHELF = ${JSON.stringify(shelf)};
 var SHELL = ${JSON.stringify(shellFiles)};

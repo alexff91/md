@@ -8,6 +8,9 @@ var STRINGS = {
     docTitle: 'Markdown — online editor with live preview, tables and export',
     docDescription: 'Write Markdown and see the result as you type: tables, task lists, code. Save .md or .html, copy HTML, print to PDF. Nothing is uploaded, works offline.',
     h1: 'Markdown',
+    eyebrow: 'Write · preview · export',
+    outline: 'Outline',
+    statWords: 'words', statChars: 'characters', statRead: 'min read', statHeads: 'headings',
     lede: 'Type on the left, see the page on the right. Tables, checklists, code — all of it renders as you go. The text stays in this browser and is here when you come back.',
 
     viewWrite: 'Write',
@@ -58,6 +61,9 @@ var STRINGS = {
     docTitle: 'Markdown — онлайн-редактор с превью, таблицами и экспортом',
     docDescription: 'Пишите Markdown и сразу видите результат: таблицы, чек-листы, код. Сохранить .md или .html, скопировать HTML, печать в PDF. Ничего не загружается, работает офлайн.',
     h1: 'Markdown',
+    eyebrow: 'Пишите · смотрите · сохраняйте',
+    outline: 'Оглавление',
+    statWords: 'слов', statChars: 'знаков', statRead: 'мин чтения', statHeads: 'заголовков',
     lede: 'Слева пишете, справа видите страницу. Таблицы, чек-листы, код — всё рисуется по мере набора. Текст остаётся в этом браузере и ждёт вас, когда вернётесь.',
 
     viewWrite: 'Текст',
